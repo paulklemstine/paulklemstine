@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paul Klemstine</title>
+  <meta name="description" content="Paul Klemstine - Developer, musician, maker. Creator of Acid, Horde, Wub, and SuperAcid.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --acid-cyan: #00f0ff;
+      --acid-magenta: #ff00e5;
+      --acid-green: #39ff14;
+      --acid-orange: #ff6b00;
+      --acid-purple: #b026ff;
+      --glass-bg: rgba(0, 0, 0, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-blur: 20px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--acid-cyan) transparent;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: #000;
+      color: #e0e0e0;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ─── WebGL Canvas Background ─── */
+    #shader-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.7;
+    }
+
+    /* ─── Cursor trail ─── */
+    .cursor-dot {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      mix-blend-mode: screen;
+      transition: opacity 0.5s;
+    }
+
+    /* ─── Content Layer ─── */
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Glass Panel ─── */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+    }
+
+    /* ─── Navigation ─── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    nav .logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--acid-cyan), var(--acid-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.05em;
+    }
+
+    nav .links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    nav .links a {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.3s;
+      position: relative;
+    }
+
+    nav .links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--acid-cyan);
+      transition: width 0.3s;
+    }
+
+    nav .links a:hover { color: var(--acid-cyan); }
+    nav .links a:hover::after { width: 100%; }
+
+    /* ─── Hero Section ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .hero-inner {
+      padding: 3rem 4rem;
+      max-width: 700px;
+    }
+
+    .avatar-ring {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      padding: 4px;
+      background: conic-gradient(var(--acid-cyan), var(--acid-magenta), var(--acid-green), var(--acid-cyan));
+      animation: ring-spin 6s linear infinite;
+      margin: 0 auto 2rem;
+    }
+
+    @keyframes ring-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .avatar-ring img, .avatar-ring .avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      background: #111;
+    }
+
+    .avatar-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #0a0a2e 0%, #1a0a2e 100%) !important;
+      color: var(--acid-cyan);
+      text-shadow: 0 0 20px var(--acid-cyan), 0 0 40px rgba(0, 240, 255, 0.3);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero h1 .first-name {
+      background: linear-gradient(135deg, var(--acid-cyan) 0%, var(--acid-green) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero h1 .last-name {
+      background: linear-gradient(135deg, var(--acid-magenta) 0%, var(--acid-orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .alias {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      color: var(--acid-green);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+    }
+
+    .tagline {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    .hero-links a:hover {
+      border-color: var(--acid-cyan);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .hero-links a svg { width: 18px; height: 18px; }
+
+    /* ─── Scroll indicator ─── */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: bounce 2s infinite;
+      opacity: 0.5;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(10px); }
+    }
+
+    /* ─── Section Titles ─── */
+    .section-title {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--acid-cyan), var(--acid-magenta));
+      margin: 0.8rem auto 0;
+      border-radius: 2px;
+    }
+
+    /* ─── Projects ─── */
+    .projects {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .project-card {
+      padding: 2rem;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .project-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(0, 240, 255, 0.03));
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .project-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0, 240, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 240, 255, 0.1);
+    }
+
+    .project-card:hover::before { opacity: 1; }
+
+    .project-card .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .badge-music { background: rgba(0, 240, 255, 0.15); color: var(--acid-cyan); }
+    .badge-ai { background: rgba(176, 38, 255, 0.15); color: var(--acid-purple); }
+    .badge-visual { background: rgba(255, 0, 229, 0.15); color: var(--acid-magenta); }
+    .badge-tool { background: rgba(57, 255, 20, 0.15); color: var(--acid-green); }
+
+    .project-card h3 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #fff;
+    }
+
+    .project-card .description {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .project-card .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .project-card .tech-tags span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .project-card .project-links {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    .project-card .project-links a {
+      color: var(--acid-cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .project-card .project-links a:hover {
+      color: #fff;
+      text-shadow: 0 0 8px var(--acid-cyan);
+    }
+
+    /* ─── Stats Banner ─── */
+    .stats {
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .stats-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2.5rem;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat .number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--acid-cyan), var(--acid-green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat .label {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 0.3rem;
+    }
+
+    /* ─── About Section ─── */
+    .about {
+      padding: 6rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .about-content {
+      padding: 3rem;
+      line-height: 1.8;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .about-content p { margin-bottom: 1.2rem; }
+
+    .about-content strong { color: var(--acid-cyan); font-weight: 600; }
+
+    .about-content .interests {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1.5rem;
+    }
+
+    .about-content .interests span {
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+      transition: all 0.3s;
+    }
+
+    .about-content .interests span:hover {
+      border-color: var(--acid-cyan);
+      color: var(--acid-cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    footer .powered-by {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    footer .powered-by a {
+      color: var(--acid-cyan);
+      text-decoration: none;
+    }
+
+    footer .shader-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.2);
+      margin-top: 0.5rem;
+    }
+
+    /* ─── Shader selector (bottom right) ─── */
+    .shader-switcher {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .shader-switcher button {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.3s;
+      padding: 0;
+    }
+
+    .shader-switcher button.active {
+      background: var(--acid-cyan);
+      border-color: var(--acid-cyan);
+      box-shadow: 0 0 8px var(--acid-cyan);
+    }
+
+    .shader-switcher button:hover {
+      border-color: var(--acid-cyan);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      nav { padding: 0.8rem 1rem; }
+      nav .links { gap: 1rem; }
+      nav .links a { font-size: 0.8rem; }
+      .hero-inner { padding: 2rem 1.5rem; }
+      .avatar-ring { width: 140px; height: 140px; }
+      .stats-inner { flex-direction: column; gap: 1.5rem; }
+      .project-grid { grid-template-columns: 1fr; }
+      .about-content { padding: 2rem; }
+    }
+
+    /* ─── Fade-in animation ─── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="shader-bg"></canvas>
+
+<div class="content">
+
+  <!-- Navigation -->
+  <nav>
+    <div class="logo">PK</div>
+    <ul class="links">
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="https://github.com/paulklemstine" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner glass">
+      <div class="avatar-ring">
+        <img src="headshot.jpg" alt="Paul Klemstine" id="avatar">
+      </div>
+      <h1><span class="first-name">Paul</span> <span class="last-name">Klemstine</span></h1>
+      <p class="alias">@paulklemstine</p>
+      <p class="tagline">Developer, musician, maker. Building at the intersection of electronic music, AI, and decentralized tech.</p>
+      <div class="hero-links">
+        <a href="https://www.linkedin.com/in/paulklemstine" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://x.com/paulklemstine" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          X
+        </a>
+        <a href="https://github.com/paulklemstine" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="https://play.google.com/store/apps/developer?id=Paul+Klemstine" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302-2.302 2.302L15.396 12l2.302-2.302zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z"/></svg>
+          Google Play
+        </a>
+        <a href="https://www.appletonmakerspace.org/" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 9V7h-2V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2H2v2h2v6H2v2h2v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2h2v-2h-2V9h2zM6 5h12v14H6V5zm3 7a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm4 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm-5 4h8v1H8v-1z"/></svg>
+          Makerspace
+        </a>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats fade-in">
+    <div class="stats-inner glass">
+      <div class="stat">
+        <div class="number">10K+</div>
+        <div class="label">App Downloads</div>
+      </div>
+      <div class="stat">
+        <div class="number">8+</div>
+        <div class="label">Open Source Projects</div>
+      </div>
+      <div class="stat">
+        <div class="number">39</div>
+        <div class="label">Psychedelic Shaders</div>
+      </div>
+      <div class="stat">
+        <div class="number">'14</div>
+        <div class="label">Building Since</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section class="projects" id="projects">
+    <h2 class="section-title fade-in">Projects</h2>
+    <div class="project-grid">
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-visual">Visuals + Music</span>
+        <h3>SuperAcid</h3>
+        <p class="description">Autonomous rave experience platform. AI-driven visuals with 39 psychedelic shader presets, live TB-303/TR-808/TR-909 synthesis via Rust/WASM, and real-time collaboration. The background of this site is powered by SuperAcid's shader engine.</p>
+        <div class="tech-tags">
+          <span>Three.js</span>
+          <span>WebGPU</span>
+          <span>Rust/WASM</span>
+          <span>TypeScript</span>
+          <span>Yjs</span>
+        </div>
+        <div class="project-links">
+          <a href="https://superacid.web.app" target="_blank" rel="noopener">Live &nearr;</a>
+          <a href="https://github.com/paulklemstine/superacid" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-music">Music</span>
+        <h3>Acid</h3>
+        <p class="description">Real-time Roland TB-303, TR-808 & TR-909 emulation on Android. Draw notes, tweak knobs, auto-generate patterns. Export to WAV/FLAC and share via IPFS. 10K+ downloads on Google Play.</p>
+        <div class="tech-tags">
+          <span>Java</span>
+          <span>Android</span>
+          <span>libGDX</span>
+          <span>IPFS</span>
+        </div>
+        <div class="project-links">
+          <a href="https://play.google.com/store/apps/details?id=com.acid" target="_blank" rel="noopener">Play Store &nearr;</a>
+          <a href="https://github.com/paulklemstine/Acid" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-ai">AI + Music</span>
+        <h3>Horde</h3>
+        <p class="description">AI-powered music groovebox. Combines machine learning with real-time synthesis for generative electronic music production.</p>
+        <div class="tech-tags">
+          <span>Java</span>
+          <span>Deep Learning</span>
+          <span>Audio</span>
+        </div>
+        <div class="project-links">
+          <a href="https://github.com/paulklemstine/horde" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-tool">Tool</span>
+        <h3>Wub</h3>
+        <p class="description">Automated music remixer. Analyzes songs, breaks them into beats and bars, then press "M" for magic &mdash; the computer composes a remix for you. Save results as WAV.</p>
+        <div class="tech-tags">
+          <span>Java</span>
+          <span>Audio Analysis</span>
+          <span>DSP</span>
+        </div>
+        <div class="project-links">
+          <a href="https://github.com/paulklemstine/Wub" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-ai">AI + Vision</span>
+        <h3>AndroidSegmentation</h3>
+        <p class="description">TensorFlow Lite DeepLab image segmentation on Android. Real-time semantic segmentation of objects directly on your phone's camera feed.</p>
+        <div class="tech-tags">
+          <span>TensorFlow Lite</span>
+          <span>Android</span>
+          <span>Computer Vision</span>
+        </div>
+        <div class="project-links">
+          <a href="https://github.com/paulklemstine/AndroidSegmentation" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card glass fade-in">
+        <span class="badge badge-visual">Generative</span>
+        <h3>MyFaceIsMelting</h3>
+        <p class="description">Generative AI visual effects and image processing experiments. Docker-based workflows for creative computing and face-warping visuals.</p>
+        <div class="tech-tags">
+          <span>Docker</span>
+          <span>Generative AI</span>
+          <span>Python</span>
+        </div>
+        <div class="project-links">
+          <a href="https://github.com/paulklemstine/MyFaceIsMelting" target="_blank" rel="noopener">Source &nearr;</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about" id="about">
+    <h2 class="section-title fade-in">About</h2>
+    <div class="about-content glass fade-in">
+      <p>I'm a self-directed developer based in <strong>Menasha, Wisconsin</strong>, building things at the intersection of electronic music, artificial intelligence, and decentralized technology.</p>
+      <p>My work spans from <strong>real-time audio synthesis</strong> (TB-303 emulation in Rust/WASM, Java Android synths) to <strong>AI-driven creative tools</strong> (generative music, computer vision, image generation) to <strong>psychedelic visual engines</strong> (39 shader presets and counting).</p>
+      <p>I'm a member of the <strong>Appleton Makerspace</strong>, the largest community-run non-profit DIY workshop in northeast Wisconsin. All my projects are open source.</p>
+      <div class="interests">
+        <span>TB-303</span>
+        <span>TR-808</span>
+        <span>TR-909</span>
+        <span>WebGPU</span>
+        <span>Rust/WASM</span>
+        <span>IPFS</span>
+        <span>Deep Learning</span>
+        <span>Shader Art</span>
+        <span>Three.js</span>
+        <span>Computer Vision</span>
+        <span>Generative Music</span>
+        <span>libGDX</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p class="powered-by">Background visuals powered by <a href="https://superacid.web.app" target="_blank" rel="noopener">SuperAcid</a> shader engine</p>
+    <p class="shader-name" id="shader-label">acid-warp</p>
+  </footer>
+
+</div>
+
+<!-- Shader preset dots -->
+<div class="shader-switcher" id="shader-switcher"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// WebGL Psychedelic Shader Background
+// Ported from SuperAcid's TSL presets to standalone GLSL
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('shader-bg');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio, 2);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── Shader Programs ───
+
+const vertexShaderSrc = `
+  attribute vec2 a_position;
+  varying vec2 v_uv;
+  void main() {
+    v_uv = a_position * 0.5 + 0.5;
+    gl_Position = vec4(a_position, 0.0, 1.0);
+  }
+`;
+
+// Shader 0: Acid Warp (ported from SuperAcid acid-warp.ts)
+const acidWarpFrag = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+
+  vec3 hsv2rgb(vec3 c) {
+    vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0) - 1.0;
+    return c.z * mix(vec3(1.0), clamp(p, 0.0, 1.0), c.y);
+  }
+
+  void main() {
+    vec2 p = (v_uv - 0.5) * 3.0;
+    float t = u_time * 0.4;
+
+    // Mouse influence
+    vec2 mp = (u_mouse - 0.5) * 2.0;
+    float mouseInfluence = exp(-length(p - mp) * 2.0) * 0.3;
+
+    // Domain warping layer 1
+    float w1x = sin(p.y * 2.5 + t * 0.7 + sin(t * 0.2) * 0.3) * 0.9;
+    float w1y = cos(p.x * 2.3 + t * 0.6) * 0.9;
+    vec2 p1 = p + vec2(w1x, w1y);
+
+    // Domain warping layer 2
+    float w2x = sin(p1.y * 3.7 + t * 0.5 + p1.x * 1.3) * 0.7;
+    float w2y = cos(p1.x * 3.1 - t * 0.4 + p1.y * 0.9) * 0.7;
+    vec2 p2 = p1 + vec2(w2x, w2y);
+
+    // Domain warping layer 3
+    float w3x = sin(p2.y * 5.1 + t * 0.3 + p2.x * 2.1) * 0.5;
+    float w3y = cos(p2.x * 4.7 - t * 0.35 + p2.y * 1.7) * 0.5;
+    vec2 p3 = p2 + vec2(w3x, w3y);
+
+    // Layer 4 (high freq)
+    float w4x = sin(p3.y * 7.3 + t * 0.2) * 0.35;
+    float w4y = cos(p3.x * 6.9 - t * 0.25) * 0.35;
+    vec2 pf = p3 + vec2(w4x, w4y) + mouseInfluence;
+
+    // Interference patterns
+    float cd = 4.0;
+    float pat1 = sin(pf.x * cd + pf.y * cd * 0.8 + t * 0.3) * 0.5 + 0.5;
+    float pat2 = sin(pf.x * cd * 1.3 - pf.y * cd * 1.1 + t * 0.4) * 0.5 + 0.5;
+    float pat3 = sin((pf.x + pf.y) * cd * 0.7 + t * 0.5) * 0.5 + 0.5;
+
+    float combined = mix(mix(pat1, pat2, 0.36), pat3, 0.24);
+
+    // Simulated beat
+    float beat = fract(t * 128.0 / 60.0);
+    float kick = pow(max(0.0, 1.0 - beat * 4.0), 3.0);
+
+    float hue = fract(combined * 0.8 + t * 0.02 + kick * 0.05);
+    float sat = 0.75 + combined * 0.2;
+    float val = 0.85 * (combined * 0.4 + 0.6) + kick * 0.12;
+
+    vec3 col = hsv2rgb(vec3(hue, sat, val));
+    col += vec3(beat * 0.06);
+
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+// Shader 1: Plasma Ocean (ported from SuperAcid plasma-ocean.ts)
+const plasmaOceanFrag = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+
+  void main() {
+    vec2 p = (v_uv - 0.5) * 3.0;
+    float t = u_time * 0.35;
+
+    vec2 mp = (u_mouse - 0.5) * 2.0;
+    float mouseWave = sin(length(p - mp) * 8.0 - t * 3.0) * 0.15 * exp(-length(p - mp) * 1.5);
+
+    // Domain warp 1
+    float w1x = sin(p.y * 3.0 + t * 0.7) * 0.5;
+    float w1y = cos(p.x * 3.0 + t * 0.6) * 0.5;
+    vec2 w = p + vec2(w1x, w1y);
+
+    // Domain warp 2
+    float w2x = sin(w.y * 4.5 + t * 0.4) * 0.36;
+    float w2y = cos(w.x * 3.9 - t * 0.5) * 0.36;
+    vec2 f = w + vec2(w2x, w2y);
+
+    float wf = 3.0;
+    float l1 = sin(f.x * wf + f.y * wf * 0.8 + t * 0.5) * 0.5 + 0.5;
+    float l2 = sin(f.x * wf * 1.7 - f.y * wf * 1.2 + t * 0.35) * 0.5 + 0.5;
+    float l3 = sin((f.x + f.y) * wf * 2.3 + t * 0.6) * 0.5 + 0.5;
+    float l4 = sin((f.x - f.y) * wf * 0.5 + t * 0.8 + sin(f.x * 3.0 + t) * 0.5) * 0.5 + 0.5;
+
+    float plasma = mix(mix(l1, l2, 0.5), mix(l3, l4, 0.3), 0.5) + mouseWave;
+
+    // Ocean palette: deep blue -> cyan -> white
+    vec3 deep = vec3(0.02, 0.05, 0.2);
+    vec3 cyan = vec3(0.0, 0.6, 0.8);
+    vec3 white = vec3(0.9, 0.95, 1.0);
+
+    vec3 col = mix(deep, cyan, smoothstep(0.0, 0.5, plasma));
+    col = mix(col, white, smoothstep(0.5, 1.0, plasma));
+
+    // Brightness
+    col *= 1.1;
+
+    // Beat splash
+    float beat = fract(u_time * 128.0 / 60.0);
+    float kick = pow(max(0.0, 1.0 - beat * 4.0), 3.0);
+    col += vec3(plasma * kick * 0.15);
+
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  }
+`;
+
+// Shader 2: Hypno Spiral (ported from SuperAcid hypno-spiral.ts)
+const hypnoSpiralFrag = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+
+  vec3 hsv2rgb(vec3 c) {
+    vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0) - 1.0;
+    return c.z * mix(vec3(1.0), clamp(p, 0.0, 1.0), c.y);
+  }
+
+  void main() {
+    vec2 p = (v_uv - 0.5) * 3.0;
+    float t = u_time * 0.5;
+
+    vec2 mp = (u_mouse - 0.5) * 0.5;
+    p += mp * 0.3;
+
+    float radius = length(p) + 0.0001;
+    float angle = atan(p.y, p.x);
+
+    float logRadius = pow(radius, 0.5) - 1.0;
+    logRadius *= 2.0;
+
+    float arms = 4.0;
+    float tight = 3.0;
+    float rotation = t * 1.0;
+
+    // Spiral 1
+    float sp1 = angle * arms / 6.28318 - logRadius * tight + rotation;
+    float band1 = fract(sp1);
+    float b1 = smoothstep(0.25, 0.5, band1) * smoothstep(0.75, 0.5, band1);
+
+    // Spiral 2 (counter-rotating)
+    float sp2 = angle * arms / 6.28318 + logRadius * tight * 0.8 - rotation * 0.7 + 0.5;
+    float band2 = fract(sp2);
+    float b2 = smoothstep(0.25, 0.5, band2) * smoothstep(0.75, 0.5, band2);
+
+    // Spiral 3 (chaos)
+    float sp3 = angle * arms * 0.5 / 6.28318 - logRadius * tight * 1.3 + rotation * 0.5 + sin(t * 0.3) * 0.3;
+    float band3 = fract(sp3);
+    float b3 = smoothstep(0.25, 0.5, band3) * smoothstep(0.75, 0.5, band3);
+
+    // Colors
+    float hue1 = fract(band1 * 0.3 + t * 0.02);
+    float hue2 = fract(hue1 + 0.33);
+    float hue3 = fract(hue1 + 0.66);
+
+    float radBright = 1.0 - radius * 0.7;
+    radBright = clamp(radBright, 0.2, 1.0);
+
+    vec3 col1 = hsv2rgb(vec3(hue1, 0.85, b1 * 1.2 * radBright));
+    vec3 col2 = hsv2rgb(vec3(hue2, 0.85, b2 * 1.0 * radBright));
+    vec3 col3 = hsv2rgb(vec3(hue3, 0.85, b3 * 0.8 * radBright * 0.5));
+
+    vec3 col = col1 + col2 + col3;
+
+    // Beat flash
+    float beat = fract(t * 128.0 / 60.0);
+    col += vec3(beat * 0.06);
+
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  }
+`;
+
+// Shader 3: Cosmic Eye (ported from SuperAcid cosmic-eye.ts)
+const cosmicEyeFrag = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+
+  void main() {
+    vec2 p = (v_uv - 0.5) * 3.0;
+    float t = u_time * 0.3;
+
+    vec2 mp = (u_mouse - 0.5) * 2.0;
+    float mouseGaze = exp(-length(p - mp) * 3.0) * 0.15;
+
+    float dist = length(p) + 0.0001;
+    float angle = sin(p.x * (1.0 + p.y * 0.01)) * 3.14159;
+
+    // Pupil
+    float pupilR = 0.08 + 0.06 + mouseGaze * 0.5;
+    float pupilEdge = smoothstep(pupilR, pupilR + 0.03, dist);
+    float pupilVoid = 1.0 - pupilEdge;
+    float voidSwirl = sin(dist * 30.0 - t * 2.0 + 9.0) * 0.5 + 0.5;
+    float pupilPat = pupilVoid * voidSwirl * 0.3;
+
+    // Iris rings
+    float ringBase = 48.0;
+    float ring1 = sin(dist * ringBase + t * 0.5) * 0.5 + 0.5;
+    float ring2 = sin(dist * ringBase * 1.6 - t * 0.35 + 0.3) * 0.5 + 0.5;
+    float ring3 = sin(dist * ringBase * 2.7 + t * 0.25) * 0.5 + 0.5;
+
+    // Radial striations
+    float angDet = 24.0;
+    float rad1 = sin(angle * angDet + dist * 10.0 + t * 0.3) * 0.5 + 0.5;
+    float rad2 = cos(angle * angDet * 1.5 - t * 0.2) * 0.5 + 0.5;
+
+    float irisBlend = ring1 * 0.3 + ring2 * 0.3 + ring3 * 0.2 + rad1 * 0.15 + rad2 * 0.1;
+
+    // Iris mask
+    float outerEdge = 0.45;
+    float irisMask = pupilEdge * (1.0 - smoothstep(outerEdge - 0.05, outerEdge, dist));
+    float outlineRing = smoothstep(outerEdge - 0.05, outerEdge, dist) * (1.0 - smoothstep(outerEdge, outerEdge + 0.03, dist));
+
+    float irisPat = irisBlend * irisMask;
+
+    // Color: deep indigo -> electric blue -> cosmic white
+    vec3 indigo = vec3(0.05, 0.02, 0.2);
+    vec3 blue = vec3(0.1, 0.4, 0.9);
+    vec3 white = vec3(0.9, 0.85, 1.0);
+
+    float ct = fract(irisPat);
+    vec3 col = mix(indigo, blue, smoothstep(0.0, 0.5, ct));
+    col = mix(col, white, smoothstep(0.5, 1.0, ct));
+
+    // Pupil color
+    vec3 pupilCol = vec3(pupilPat * 0.15, pupilPat * 0.05, pupilPat * 0.25);
+
+    // Combine
+    vec3 eyeCol = mix(pupilCol, col, pupilEdge) + vec3(outlineRing * 0.1, outlineRing * 0.05, outlineRing * 0.15);
+    eyeCol *= 1.3;
+
+    // Background outside eye
+    float bgMask = smoothstep(outerEdge, outerEdge + 0.05, dist);
+    vec3 bg = vec3(0.01, 0.005, 0.03);
+    vec3 finalCol = mix(eyeCol, bg, bgMask);
+
+    gl_FragColor = vec4(clamp(finalCol, 0.0, 1.0), 1.0);
+  }
+`;
+
+// Shader 4: Nebula Drift (original, inspired by SuperAcid nebula-drift.ts)
+const nebulaDriftFrag = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec2 u_mouse;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+    for (int i = 0; i < 5; i++) {
+      v += a * noise(p);
+      p = rot * p * 2.0;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  void main() {
+    vec2 p = (v_uv - 0.5) * 3.0;
+    float t = u_time * 0.15;
+
+    vec2 mp = (u_mouse - 0.5) * 0.5;
+
+    // Warped FBM for nebula clouds
+    vec2 q = vec2(fbm(p + t * 0.3 + mp), fbm(p + vec2(1.7, 9.2) + t * 0.2));
+    vec2 r = vec2(fbm(p + q * 4.0 + vec2(1.7, 9.2) + t * 0.1), fbm(p + q * 4.0 + vec2(8.3, 2.8) + t * 0.15));
+    float f = fbm(p + r * 4.0);
+
+    // Color: deep space purple -> magenta -> cyan -> white
+    vec3 col = vec3(0.0);
+    col = mix(vec3(0.05, 0.0, 0.1), vec3(0.5, 0.0, 0.5), clamp(f * 2.0, 0.0, 1.0));
+    col = mix(col, vec3(0.0, 0.8, 1.0), clamp(pow(f, 2.0) * 3.0, 0.0, 1.0));
+    col = mix(col, vec3(1.0, 0.9, 0.95), clamp(pow(f, 3.0) * 4.0, 0.0, 1.0));
+
+    // Stars
+    float stars = pow(hash(floor(v_uv * u_resolution * 0.5)), 20.0);
+    col += vec3(stars * 0.6);
+
+    // Subtle pulsing
+    float pulse = sin(t * 2.0) * 0.05 + 1.0;
+    col *= pulse;
+
+    gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  }
+`;
+
+const shaderSources = [
+  { name: 'acid-warp', src: acidWarpFrag },
+  { name: 'plasma-ocean', src: plasmaOceanFrag },
+  { name: 'hypno-spiral', src: hypnoSpiralFrag },
+  { name: 'cosmic-eye', src: cosmicEyeFrag },
+  { name: 'nebula-drift', src: nebulaDriftFrag },
+];
+
+// ─── Compile shaders ───
+
+function compileShader(src, type) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, src);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function createProgram(fragSrc) {
+  const vs = compileShader(vertexShaderSrc, gl.VERTEX_SHADER);
+  const fs = compileShader(fragSrc, gl.FRAGMENT_SHADER);
+  if (!vs || !fs) return null;
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error('Program link error:', gl.getProgramInfoLog(prog));
+    return null;
+  }
+
+  return {
+    program: prog,
+    uTime: gl.getUniformLocation(prog, 'u_time'),
+    uResolution: gl.getUniformLocation(prog, 'u_resolution'),
+    uMouse: gl.getUniformLocation(prog, 'u_mouse'),
+    aPosition: gl.getAttribLocation(prog, 'a_position'),
+  };
+}
+
+const programs = shaderSources.map(s => ({ ...createProgram(s.src), name: s.name })).filter(p => p.program);
+
+// ─── Fullscreen quad ───
+
+const quadBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+// ─── State ───
+
+let currentShader = 0;
+let nextShader = -1;
+let transitionProgress = 0;
+let lastSwitch = 0;
+const CYCLE_TIME = 20000; // 20 seconds per shader
+const TRANSITION_TIME = 2000;
+let mouseX = 0.5, mouseY = 0.5;
+let targetMouseX = 0.5, targetMouseY = 0.5;
+
+document.addEventListener('mousemove', (e) => {
+  targetMouseX = e.clientX / window.innerWidth;
+  targetMouseY = 1.0 - e.clientY / window.innerHeight;
+});
+
+// ─── Shader switcher dots ───
+
+const switcherEl = document.getElementById('shader-switcher');
+const labelEl = document.getElementById('shader-label');
+
+programs.forEach((p, i) => {
+  const btn = document.createElement('button');
+  btn.title = p.name;
+  if (i === 0) btn.classList.add('active');
+  btn.addEventListener('click', () => {
+    if (i !== currentShader) {
+      nextShader = i;
+      transitionProgress = 0;
+      lastSwitch = performance.now();
+    }
+  });
+  switcherEl.appendChild(btn);
+});
+
+function updateSwitcherUI(idx) {
+  switcherEl.querySelectorAll('button').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  if (programs[idx]) labelEl.textContent = programs[idx].name;
+}
+
+// ─── Render loop ───
+
+function renderShader(prog, time) {
+  gl.useProgram(prog.program);
+  gl.uniform1f(prog.uTime, time / 1000);
+  gl.uniform2f(prog.uResolution, canvas.width, canvas.height);
+  gl.uniform2f(prog.uMouse, mouseX, mouseY);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
+  gl.enableVertexAttribArray(prog.aPosition);
+  gl.vertexAttribPointer(prog.aPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+function frame(now) {
+  requestAnimationFrame(frame);
+
+  // Smooth mouse
+  mouseX += (targetMouseX - mouseX) * 0.05;
+  mouseY += (targetMouseY - mouseY) * 0.05;
+
+  // Auto-cycle shaders
+  if (now - lastSwitch > CYCLE_TIME && nextShader < 0) {
+    nextShader = (currentShader + 1) % programs.length;
+    transitionProgress = 0;
+    lastSwitch = now;
+  }
+
+  // Handle transition
+  if (nextShader >= 0) {
+    transitionProgress += 16 / TRANSITION_TIME;
+    if (transitionProgress >= 1) {
+      currentShader = nextShader;
+      nextShader = -1;
+      transitionProgress = 0;
+      updateSwitcherUI(currentShader);
+    }
+  }
+
+  // Render current shader
+  if (programs[currentShader]) {
+    renderShader(programs[currentShader], now);
+  }
+}
+
+if (gl && programs.length > 0) {
+  lastSwitch = performance.now();
+  requestAnimationFrame(frame);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Cursor Trail Effect
+// ═══════════════════════════════════════════════════════════════
+
+const trailColors = ['#00f0ff', '#ff00e5', '#39ff14', '#b026ff', '#ff6b00'];
+const trailDots = [];
+const TRAIL_LENGTH = 12;
+
+for (let i = 0; i < TRAIL_LENGTH; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'cursor-dot';
+  dot.style.background = trailColors[i % trailColors.length];
+  dot.style.opacity = (1 - i / TRAIL_LENGTH) * 0.6;
+  dot.style.width = (8 - i * 0.4) + 'px';
+  dot.style.height = (8 - i * 0.4) + 'px';
+  document.body.appendChild(dot);
+  trailDots.push({ el: dot, x: 0, y: 0 });
+}
+
+let cursorX = 0, cursorY = 0;
+document.addEventListener('mousemove', (e) => {
+  cursorX = e.clientX;
+  cursorY = e.clientY;
+});
+
+function animateTrail() {
+  requestAnimationFrame(animateTrail);
+  for (let i = trailDots.length - 1; i > 0; i--) {
+    trailDots[i].x += (trailDots[i-1].x - trailDots[i].x) * 0.3;
+    trailDots[i].y += (trailDots[i-1].y - trailDots[i].y) * 0.3;
+  }
+  trailDots[0].x += (cursorX - trailDots[0].x) * 0.5;
+  trailDots[0].y += (cursorY - trailDots[0].y) * 0.5;
+
+  trailDots.forEach(d => {
+    d.el.style.transform = `translate(${d.x - 4}px, ${d.y - 4}px)`;
+  });
+}
+animateTrail();
+
+// ═══════════════════════════════════════════════════════════════
+// Fade-in on scroll
+// ═══════════════════════════════════════════════════════════════
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+</script>
+</body>
+</html>
